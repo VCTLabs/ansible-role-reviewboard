@@ -12,24 +12,25 @@ FastCGIserver {
 }
 
 UrlToolkit {
-	ToolkitID = rails_urls
-	RequestURI isfile Return
-	Match .* UseFastCGI reviewboard_fcgi
-}
-
-UrlToolkit {
 	ToolkitID = django_urls
 	RequestURI isfile Return
 	Match ^/(media|static|errordocs)($|/) Return
-	Match ^/.* UseFastCGI reviewboard_cfgi
+	Match ^/.* UseFastCGI reviewboard_fcgi
+}
+
+Directory {
+	DirectoryID = static_dirs
+	Path = /media, /static, /errordocs
+	ExpirePeriod = 2 weeks
 }
 
 VirtualHost {
 	RequiredBinding = reviewboard_port
 	Hostname = {{ web_server_hostname }}
-	WebsiteRoot = {{ reviewboard_appdir }}
+	WebsiteRoot = {{ reviewboard_staticdir }}
 	TimeForCGI = 20
 	UseToolkit = django_urls
+	UseDirectory = static_dirs
         ## needed?
 	#FollowSymLinks = yes
 }
