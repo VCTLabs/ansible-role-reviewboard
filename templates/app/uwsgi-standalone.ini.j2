@@ -1,0 +1,16 @@
+; {{ansible_managed}}
+
+[uwsgi]
+plugins = http,python
+http = {{ web_server_ip }}:{{ web_server_port }}
+wsgi-file = {{ reviewboard_appdir }}/htdocs/reviewboard.wsgi
+env = PYTHONPATH={{ reviewboard_topdir }}/.local/lib/python2.7/site-packages/:{{ reviewboard_appdir }}/conf
+env = PYTHONUSERBASE={{ reviewboard_topdir }}/.local
+chdir = {{ reviewboard_appdir }}
+static-map = /media={{ reviewboard_staticdir }}/media
+static-map = /static={{ reviewboard_staticdir }}/static
+static-map = /errordocs={{ reviewboard_staticdir }}/errordocs
+uid = reviewboard 
+gid = reviewboard 
+logto = /var/log/reviewboard/uwsgi-standalone.log
+logformat = [%(ltime)] METHOD '%(method)' URI '%(uri)' PATH_INFO '%(var.PATH_INFO)' SCRIPT_NAME '%(var.SCRIPT_NAME)' STATUS '%(status)'

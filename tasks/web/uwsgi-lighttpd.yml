@@ -1,0 +1,78 @@
+---
+ - name: Get python version
+   # major and minor but no patch number x.y.z => x.y
+   shell: python -c "import sys; print str(sys.version_info.major) + str(sys.version_info.minor)" 
+   register: python_version
+   
+ - name: Install uwsgi dependencies (yum)
+   yum: state=installed name={{ item }}
+   with_items:
+    - uwsgi
+    - uwsgi-plugin-python
+   when: ansible_os_family == "RedHat"
+
+ - name: Install uwsgi dependencies (apt)
+   apt: state=installed name={{ item }}
+   with_items:
+    - uwsgi
+    - uwsgi-plugin-python
+   when: ansible_os_family == "Debian"
+
+ #@@@ need 'python' useflag enabled
+ - name: Install uwsgi dependencies (portage)
+   portage: state=installed name={{ item }}
+   with_items:
+    - www-servers/uwsgi
+   when: ansible_os_family == "Gentoo"
+
+ - name: Set python plugin name for config file (RedHat)
+   # just plain 'python' for RedHat
+   set_fact: python_plugin_name=python
+   when: ansible_os_family == "RedHat"
+   
+ - name: Calculate python plugin name (non-RedHat)
+   # 'python$PYTHONVER' where PYTHONVER skips dot  x.y => xy 
+   shell: echo python{{ python_version.stdout }} | tr -d '.'
+   register: versioned_python_plugin_name
+   when: ansible_os_family != "RedHat"
+
+ - name: Set python plugin name for config file (non-RedHat)
+   set_fact: python_plugin_name="{{ versioned_python_plugin_name.stdout }}"
+   when: ansible_os_family != "RedHat"
+
+ - debug: msg="python_plugin_name={{ python_plugin_name }}"
+
+ - name: Install uwsgi fastcgi config (/etc/uwsgi.d/)
+   template: 
+     src: app/uwsgi-fastcgi.ini.j2 
+     dest: /etc/uwsgi.d/uwsgi-reviewboard-fastcgi.ini
+     # install config with owner of app to make uwsgi emperor mode happy
+     owner: reviewboard
+     group: reviewboard
+   when: ansible_os_family != "Debian"
+
+ - name: Install uwsgi fastcgi config (/etc/uwsgi/apps-enabled/)
+   template:
+     src: app/uwsgi-fastcgi.ini.j2 
+     dest: /etc/uwsgi/apps-enabled/uwsgi-reviewboard-fastcgi.ini
+     owner: reviewboard
+     group: reviewboard
+   when: ansible_os_family == "Debian"
+
+ - name: Create uwsgi log directory
+   file: 
+     path: /var/log/reviewboard
+     state: directory
+     owner: reviewboard
+     group: reviewboard
+
+ - name: Enable uwsgi server 
+   service: name=uwsgi state=started enabled=yes
+
+ - name: Install lighttpd fastcgi config 
+   template: 
+     src: web/lighttpd.conf.j2 
+     dest: /etc/lighttpd/vhosts.d/reviewboard.conf
+
+ - name: Enable lighttpd server
+   service: name=lighttpd state=started enabled=yes

@@ -1,0 +1,35 @@
+# {{ansible_managed}}
+
+Binding {
+	BindingId = reviewboard_port
+	Interface = {{ web_server_ip }}
+	Port = {{ web_server_port }}
+}
+
+FastCGIserver {
+	FastCGIid = reviewboard_fcgi
+	ConnectTo = /tmp/reviewboard.sock
+}
+
+UrlToolkit {
+	ToolkitID = rails_urls
+	RequestURI isfile Return
+	Match .* UseFastCGI reviewboard_fcgi
+}
+
+UrlToolkit {
+	ToolkitID = django_urls
+	RequestURI isfile Return
+	Match ^/(media|static|errordocs)($|/) Return
+	Match ^/.* UseFastCGI reviewboard_cfgi
+}
+
+VirtualHost {
+	RequiredBinding = reviewboard_port
+	Hostname = {{ web_server_hostname }}
+	WebsiteRoot = {{ reviewboard_appdir }}
+	TimeForCGI = 20
+	UseToolkit = django_urls
+        ## needed?
+	#FollowSymLinks = yes
+}

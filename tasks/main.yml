@@ -1,0 +1,78 @@
+---
+ - name: Install common dependencies (yum)
+   yum: state=installed name={{ item }}
+   with_items:
+    - python-pip
+   when: ansible_os_family == "RedHat" 
+ - name: Install common dependencies (apt)
+   apt: state=installed name={{ item }}
+   with_items:
+    - python-pip
+   when: ansible_os_family == "Debian"
+
+ - name: Install common dependencies (portage)
+   portage: state=installed name={{ item }}
+   with_items:
+    - dev-python/pip
+   when: ansible_os_family == "Gentoo"
+
+ - include: db/{{ sql_database_type }}.yml
+
+ - name: Create topdir parent directory
+   file: path={{ reviewboard_topdir | dirname }} state=directory recurse=yes
+
+ - name: Create the ReviewBoard user
+   user: name=reviewboard system=yes home={{ reviewboard_topdir }}
+
+ - name: Install ReviewBoard from pip
+   command: /usr/bin/pip install --user ReviewBoard=={{reviewboard_version}}
+   become_user: reviewboard
+
+ - name: Create symlink to binaries installed by pip
+   file:
+     src: "{{reviewboard_topdir}}/.local/bin"
+     dest: "{{reviewboard_topdir}}/bin"
+     state: link
+
+ - name: Run ReviewBoard installer
+   # web-server-type=apache doesn't mean we have to use apache,
+   # it just generates a config one could use with apache
+   command: "{{reviewboard_topdir}}/bin/rb-site install {{reviewboard_appdir}}
+     --noinput
+     --db-type={{sql_database_type}}
+     --db-name={{sql_database_name}}
+     --db-host={{sql_database_host}}
+     --db-user={{sql_username}}
+     --db-pass={{sql_password}}
+     --admin-user={{admin_user}}
+     --admin-password={{admin_password}}
+     --admin-email={{admin_email}}
+     --cache-type={{web_cache_type}}
+     --cache-info={{web_cache_info}}
+     --domain-name={{web_server_hostname}}
+     --web-server-port={{web_server_port}}
+     --web-server-type=apache
+     --python-loader=wsgi"
+   environment:
+     PYTHONPATH: "{{reviewboard_topdir}}/.local/lib/python2.7/site-packages"
+
+ - name: Allow reviewboard user to write in upload directory
+   file: path={{ reviewboard_appdir }}/htdocs/media/ext state=directory owner=reviewboard
+
+ - name: Allow reviewboard user to write in state directory
+   file: path={{ reviewboard_appdir }}/data state=directory owner=reviewboard
+
+ - name: Create staticdir directory for static file serving
+   file: path={{ reviewboard_staticdir }} state=directory recurse=yes
+
+ - name: Make copy of ReviewBoard files for static file serving (eliminate symlinks)
+   shell: rsync -r --copy-links {{reviewboard_appdir}}/htdocs/{errordocs,media,static} {{reviewboard_staticdir}}
+
+ - include: web/{{ app_server_type }}-{{ web_server_type }}.yml
+
+ - include: firewall.yml
+
+ ## run webrick webserver for testing
+ # bundle exec rails server webrick -e production
+ ## login
+ # admin/admin

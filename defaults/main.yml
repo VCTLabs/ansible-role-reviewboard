@@ -1,0 +1,35 @@
+---
+# defaults file for ansible-role-reviewboard/
+
+reviewboard_version: "2.5.5"
+reviewboard_topdir: "/home/reviewboard"
+reviewboard_appdir: "{{ reviewboard_topdir }}/reviewboard-{{ reviewboard_version }}"
+reviewboard_staticdir: "/var/www/reviewboard"
+
+admin_user: "admin"
+admin_password: "admin"
+admin_email: "admin@localhost"
+
+# supported sql database types: postgresql, mysql (actually mariadb, on some distros)
+sql_database_type: "mysql"
+sql_database_name: "reviewboard"
+sql_database_host: "localhost"
+sql_username: "reviewboard"
+sql_password: "reviewboard"
+
+# supported web cache types: file, memcached
+# web cache info is directory path for 'file' type, connection string for 'memcached' 
+web_cache_type: "file"
+web_cache_info: "{{reviewboard_topdir}}/cache"
+
+# supported app server types: uwsgi
+app_server_type: "uwsgi"
+
+# supported web server types: lighttpd, hiawatha, uwsgi
+web_server_type: "uwsgi"
+web_server_hostname: "localhost"
+web_server_ip: "127.0.0.1"
+web_server_port: 3000
+
+# supported firewall types: firewalld, ufw, iptables
+firewall: ""

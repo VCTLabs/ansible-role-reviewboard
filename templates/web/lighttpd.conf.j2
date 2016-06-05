@@ -1,0 +1,35 @@
+server.modules += (
+    "mod_fastcgi",
+    "mod_rewrite",
+    "mod_alias",
+)
+
+$SERVER["socket"] == "{{ web_server_ip }}:{{ web_server_port }}" {
+
+    fastcgi.server = (
+        "/reviewboard.wsgi" => (
+            "main" => (
+                "socket" => "/tmp/reviewboard.sock",
+                "check-local" => "disable",
+		"bin-environment" => (
+                    "PYTHONPATH" => "{{ reviewboard_topdir }}/.local/lib/python2.7/site-packages",
+                    "PYTHONUSERBASE" => "{{ reviewboard_topdir }}/.local"
+                )
+            )
+        ),
+    )
+
+    alias.url = (
+        "/media" => "{{ reviewboard_staticdir }}/media",
+        "/static" => "{{ reviewboard_staticdir }}/static",
+        "/errordocs" => "{{ reviewboard_staticdir }}/errordocs",
+    )
+
+    url.rewrite-once = (
+        "^(/media/.*)$" => "$1",
+        "^(/static/.*)$" => "$1",
+        "^(/errordocs/.*)$" => "$1",
+        "^(/reviewboard.wsgi.*)$" => "$1",
+        "^(/.*)$" => "/reviewboard.wsgi$1",
+    )
+}
