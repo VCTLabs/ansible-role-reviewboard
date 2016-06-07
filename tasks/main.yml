@@ -34,10 +34,22 @@
      dest: "{{reviewboard_topdir}}/bin"
      state: link
 
+ - name: Check if ReviewBoard app directory already exists
+   stat: path={{ reviewboard_appdir }}
+   register: reviewboard_install_dest
+
+ - name: Select 'install' action if app directory does not exist
+   set_fact: installer_action=install
+   when: reviewboard_install_dest.stat.exists == False
+
+ - name: Select 'upgrade' action if app directory does exist
+   set_fact: installer_action=upgrade
+   when: reviewboard_install_dest.stat.exists == True
+
  - name: Run ReviewBoard installer
    # web-server-type=apache doesn't mean we have to use apache,
    # it just generates a config one could use with apache
-   command: "{{reviewboard_topdir}}/bin/rb-site install {{reviewboard_appdir}}
+   command: "{{reviewboard_topdir}}/bin/rb-site {{installer_action}} {{reviewboard_appdir}}
      --noinput
      --db-type={{sql_database_type}}
      --db-name={{sql_database_name}}
