@@ -46,6 +46,19 @@
    set_fact: installer_action=upgrade
    when: reviewboard_install_dest.stat.exists == True
 
+ - name: Create appdir parent directory
+   file: path={{ reviewboard_appdir | dirname }} state=directory recurse=yes
+
+ - name: Remember original owner of parent directory
+   stat: path={{ reviewboard_appdir | dirname }} 
+   register: appdir_parent
+
+ - name: Allow reviewboard to write in appdir parent directory
+   file: path={{ reviewboard_appdir | dirname }} state=directory owner=reviewboard
+
+ - name: Allow reviewboard to write sitelist
+   file: path=/etc/reviewboard state=directory owner=reviewboard
+
  - name: Run ReviewBoard installer
    # web-server-type=apache doesn't mean we have to use apache,
    # it just generates a config one could use with apache
@@ -65,8 +78,13 @@
      --web-server-port={{web_server_port}}
      --web-server-type=apache
      --python-loader=wsgi"
-   environment:
-     PYTHONPATH: "{{reviewboard_topdir}}/.local/lib/python2.7/site-packages"
+   become_user: reviewboard
+
+ - name: Restore original owner of appdir parent directory
+   file: path={{ reviewboard_appdir | dirname }} state=directory owner={{ appdir_parent.stat.pw_name }}
+
+ - name: Set default owner of appdir area
+   file: path={{ reviewboard_appdir }} state=directory recurse=yes owner=root
 
  - name: Allow reviewboard user to write in upload directory
    file: path={{ reviewboard_appdir }}/htdocs/media/ext state=directory owner=reviewboard
