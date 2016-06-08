@@ -10,6 +10,9 @@ admin_user: "admin"
 admin_password: "admin"
 admin_email: "admin@localhost"
 
+# make reviewboard user member of group with read access to local repos
+repo_group: "git"
+
 # supported sql database types: postgresql, mysql (actually mariadb, on some distros)
 sql_database_type: "mysql"
 sql_database_name: "reviewboard"

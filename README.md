@@ -18,6 +18,7 @@ Role Variables
 * admin_user
 * admin_password
 * admin_email
+* repo_group
 * sql_database_type
 * sql_database_name
 * sql_database_host
