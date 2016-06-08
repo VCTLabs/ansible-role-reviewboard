@@ -54,7 +54,7 @@
    register: appdir_parent
 
  - name: Allow reviewboard to write in appdir parent directory
-   file: path={{ reviewboard_appdir | dirname }} state=directory owner=reviewboard
+   file: path={{ reviewboard_appdir | dirname }} state=directory owner=reviewboard recurse=yes
 
  - name: Allow reviewboard to write sitelist
    file: path=/etc/reviewboard state=directory owner=reviewboard
@@ -84,10 +84,13 @@
    file: path={{ reviewboard_appdir | dirname }} state=directory owner={{ appdir_parent.stat.pw_name }}
 
  - name: Set default owner of appdir area
-   file: path={{ reviewboard_appdir }} state=directory recurse=yes owner=root
+   file: path={{ reviewboard_appdir }} state=directory recurse=yes owner=root group=root
 
  - name: Allow reviewboard user to write in upload directory
-   file: path={{ reviewboard_appdir }}/htdocs/media/ext state=directory owner=reviewboard
+   file: path={{ reviewboard_appdir }}/htdocs/static/ext state=directory owner=reviewboard group=reviewboard
+
+ - name: Allow reviewboard user to write in legacy upload directory
+   file: path={{ reviewboard_appdir }}/htdocs/media/ext state=directory owner=reviewboard group=reviewboard
 
  - name: Allow reviewboard user to write in state directory
    file: path={{ reviewboard_appdir }}/data state=directory owner=reviewboard
